@@ -68,7 +68,7 @@ class TVHWidget(base._Widget, base.MarginMixin):
     def _read_data(self, data):
         self.data = data
 
-        self.timeout_add(1, self.update)
+        self.timeout_add(1, self.draw)
         self.timeout_add(self.refresh_interval, self.refresh)
 
     def setup_images(self):
@@ -107,7 +107,7 @@ class TVHWidget(base._Widget, base.MarginMixin):
                              2,
                              2)
 
-    def update(self):
+    def draw(self):
         # Remove background
         self.drawer.clear(self.background or self.bar.background)
 
@@ -120,10 +120,6 @@ class TVHWidget(base._Widget, base.MarginMixin):
         elif self.is_recording:
             self.draw_highlight(top=False, colour=self.recording_colour)
 
-        # Redraw the bar
-        self.bar.draw()
-
-    def draw(self):
         self.drawer.draw(offsetx=self.offset, width=self.length)
 
     def button_press(self, x, y, button):
