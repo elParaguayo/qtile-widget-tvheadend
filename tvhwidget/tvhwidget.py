@@ -1,6 +1,4 @@
 from datetime import datetime
-from queue import Queue, Empty
-from threading import Thread
 from requests.auth import HTTPBasicAuth
 
 from libqtile.widget import base
@@ -56,17 +54,10 @@ class TVHWidget(base._Widget, base.MarginMixin):
             logger.warning("Couldn't connect to TVH server")
             data = []
 
-        queue.put(data)
+        return data
 
-    def _wait_for_data(self):
-        try:
-            data = self._queue.get(False)
-            self._read_data(data)
-        except Empty:
-            self.timeout_add(1, self._wait_for_data)
-
-    def _read_data(self, data):
-        self.data = data
+    def _read_data(self, future):
+        self.data = future.result()
 
         self.timeout_add(1, self.draw)
         self.timeout_add(self.refresh_interval, self.refresh)
@@ -81,12 +72,8 @@ class TVHWidget(base._Widget, base.MarginMixin):
             self.surfaces[name] = img.pattern
 
     def refresh(self):
-        self._queue = Queue()
-        kwargs = {"queue": self._queue}
-        self.worker = Thread(target=self._get_data, kwargs=kwargs)
-        self.worker.daemon = True
-        self.worker.start()
-        self._wait_for_data()
+        future = self.qtile.run_in_executor(self._get_data)
+        future.add_done_callback(self._read_data)
 
     def set_refresh_timer(self):
         pass
